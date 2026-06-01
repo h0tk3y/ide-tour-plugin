@@ -1,0 +1,28 @@
+<idea-plugin>
+    <id>com.gradle.idetour</id>
+    <name>Claude IDE Tour</name>
+    <vendor>Gradle Team</vendor>
+    <description><![CDATA[
+        Hosts an MCP server inside the IDE so Claude Code can drive guided code tours:
+        pre-populate an ordered list of items (file + inlay-hint explanations + optional
+        highlights) and let the user navigate item-by-item from a tool window.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.gradle.idetour.mcp.McpServerService"/>
+        <projectService serviceImplementation="com.gradle.idetour.tours.ToursService"/>
+        <postStartupActivity implementation="com.gradle.idetour.PluginStartupActivity"/>
+        <toolWindow id="Code Tour"
+                    anchor="right"
+                    factoryClass="com.gradle.idetour.ui.CodeTourToolWindowFactory"/>
+        <statusBarWidgetFactory id="com.gradle.idetour.tourStatus"
+                                implementation="com.gradle.idetour.ui.statusbar.TourStatusBarWidgetFactory"/>
+    </extensions>
+
+    <applicationListeners>
+        <listener class="com.gradle.idetour.PluginUnloadListener"
+                  topic="com.intellij.ide.plugins.DynamicPluginListener"/>
+    </applicationListeners>
+</idea-plugin>
