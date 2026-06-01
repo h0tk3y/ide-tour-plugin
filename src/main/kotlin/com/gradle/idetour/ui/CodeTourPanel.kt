@@ -17,6 +17,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
@@ -53,6 +54,11 @@ class CodeTourPanel(private val project: Project) : JPanel(BorderLayout()), Disp
             val bounds = getCellBounds(idx, idx) ?: return -1
             return if (bounds.contains(location)) idx else -1
         }
+
+        // Force the list width to follow the viewport so HTML cells reflow on tool-window
+        // resize. Without this, JList sizes itself to its preferred width (the widest
+        // cell) and stays there even when the viewport shrinks, so notes never wrap.
+        override fun getScrollableTracksViewportWidth(): Boolean = true
     }.apply {
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         fixedCellHeight = -1
@@ -79,6 +85,10 @@ class CodeTourPanel(private val project: Project) : JPanel(BorderLayout()), Disp
     private val toolbar: ActionToolbar = ActionManager.getInstance()
         .createActionToolbar(ActionPlaces.TOOLWINDOW_CONTENT, actionGroup, true)
         .also { it.targetComponent = this }
+        // Tie the toolbar's lifetime to this panel so it (and its inner-class
+        // AnActions, which hold an implicit reference to CodeTourPanel) doesn't
+        // outlive the plugin classloader on unload.
+        .also { (it as? Disposable)?.let { d -> Disposer.register(this@CodeTourPanel, d) } }
 
     init {
         // Header: icon toolbar on top, then a thin title row.
@@ -242,9 +252,13 @@ private class ItemRenderer(private val tourProvider: () -> TourState?) : ListCel
         val notesHtml = value.spec.inlays.joinToString("") { inlay ->
             "<div style='margin-top:6px; color:#888'>${StringUtil.escapeXmlEntities(inlay.text)}</div>"
         }
-        // Adapt to the list's current width so HTML wraps at the tool window's bounds.
-        val availableWidth = (list.width - 24).coerceAtLeast(120)
-        label.text = "<html><body style='width: ${availableWidth}px'><b>$prefix&nbsp;&nbsp;$title</b>$notesHtml</body></html>"
+        // Swing's HTMLEditorKit doesn't reliably honor `width: Npx` on <body> for
+        // layout — long words still lay out at their natural width and overflow.
+        // `<table width="N">` IS honored consistently in HTML 3.2 dialect, so we
+        // wrap the content in a fixed-width table cell to force wrapping.
+        val availableWidth = (list.width - 16).coerceAtLeast(120)
+        label.text = "<html><table width=\"$availableWidth\" cellspacing=\"0\" cellpadding=\"0\">" +
+            "<tr><td><b>$prefix&nbsp;&nbsp;$title</b>$notesHtml</td></tr></table></html>"
 
         if (isSelected) {
             label.background = list.selectionBackground

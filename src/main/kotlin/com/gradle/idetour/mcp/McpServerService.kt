@@ -87,6 +87,10 @@ class McpServerService : Disposable {
             }
         }
         thisLogger().info("[ide-tour-plugin] MCP server stopped")
+        // Hint the JVM to GC promptly so the plugin classloader can be released
+        // within the 5s window the IDE allows before declaring "not unload-safe".
+        // Not guaranteed to run synchronously (modern GCs may ignore), but harmless.
+        System.gc()
     }
 
     companion object {

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.gradle.idetour"
-version = "0.1.0"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -31,4 +31,13 @@ intellijPlatform {
         }
     }
     buildSearchableOptions = false
+}
+
+tasks {
+    runIde {
+        // When a dynamic-unload attempt fails, the IDE will dump a heap snapshot
+        // into the sandbox's log directory. Analyse it to find references pinning
+        // the plugin classloader.
+        jvmArgs("-Dide.plugins.snapshot.on.unload.fail=true")
+    }
 }
