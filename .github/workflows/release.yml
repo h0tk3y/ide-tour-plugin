@@ -24,10 +24,12 @@ jobs:
       - name: Build plugin
         run: ./gradlew buildPlugin
 
-      - name: Create GitHub release with plugin ZIP
+      - name: Create GitHub release with plugin ZIP and skill
         uses: softprops/action-gh-release@v2
         with:
-          files: build/distributions/*.zip
+          files: |
+            build/distributions/*.zip
+            skill/*.md
           generate_release_notes: true
           draft: false
           prerelease: false
