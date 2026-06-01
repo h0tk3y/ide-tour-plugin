@@ -31,6 +31,7 @@ The `intellij-tour` MCP server exposes these tools:
 {
   "title": "string shown in the tool window",
   "file": "project-relative or absolute path",
+  "location": "TourState.gotoIndex",
   "anchor": {"line": 42, "col": 1},
   "inlays": [
     {"line": 42, "text": "explanation", "position": "aboveLine"}
@@ -44,6 +45,7 @@ The `intellij-tour` MCP server exposes these tools:
 - `inlays` is **required** and must contain at least one entry. `position` is `aboveLine` (default), `belowLine`, or `endOfLine`.
 - `highlights` is optional; useful for marking the region the explanation refers to.
 - `anchor` defaults to the first inlay's line.
+- `location` is optional but **strongly recommended**: a short, user-friendly label like `ClassName.methodName`, `ClassName`, or `filename.kt` shown as a subtitle in the tool-window list. Helps the user identify *where* in the code the item lives without reading the full path. If omitted, the renderer falls back to `<basename>:<line>` (e.g. `TourState.kt:48`).
 - Inlay text is rendered with a state prefix (`✓` passed / `▶` current / `○` future) automatically — don't include one in `text`.
 
 ## Workflow

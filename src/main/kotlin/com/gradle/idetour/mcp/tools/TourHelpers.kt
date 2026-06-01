@@ -28,6 +28,7 @@ internal fun parseTourItem(json: JsonObject): TourItem {
     val title = json.get("title")?.asString ?: error("Item missing 'title'")
     val file = json.get("file")?.asString ?: error("Item missing 'file'")
     val id = json.get("id")?.takeIf { !it.isJsonNull }?.asString
+    val location = json.get("location")?.takeIf { !it.isJsonNull }?.asString
     val anchor = json.getAsJsonObject("anchor")?.let {
         Position(it.get("line").asInt, it.get("col")?.asInt ?: 1)
     }
@@ -35,7 +36,7 @@ internal fun parseTourItem(json: JsonObject): TourItem {
         ?: error("Item missing 'inlays'")
     val highlights = json.getAsJsonArray("highlights")?.map { parseHighlightSpec(it.asJsonObject) }
         ?: emptyList()
-    return TourItem(id, title, file, anchor, inlays, highlights)
+    return TourItem(id, title, file, location, anchor, inlays, highlights)
 }
 
 private fun parseInlaySpec(json: JsonObject): InlaySpec {

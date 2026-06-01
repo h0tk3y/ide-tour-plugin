@@ -44,22 +44,9 @@ class CodeTourPanel(private val project: Project) : JPanel(BorderLayout()), Disp
         border = BorderFactory.createEmptyBorder(4, 8, 4, 8)
     }
     private val itemListModel = DefaultListModel<TourItemEntry>()
-    private val itemList = object : JBList<TourItemEntry>(itemListModel) {
-        // Default JBList.locationToIndex clamps to a valid index even when the point is
-        // below the last cell; that causes BasicListUI to flash a selection on press.
-        // Returning -1 for such points skips the selection entirely.
-        override fun locationToIndex(location: java.awt.Point): Int {
-            val idx = super.locationToIndex(location)
-            if (idx < 0) return -1
-            val bounds = getCellBounds(idx, idx) ?: return -1
-            return if (bounds.contains(location)) idx else -1
-        }
-
-        // Force the list width to follow the viewport so HTML cells reflow on tool-window
-        // resize. Without this, JList sizes itself to its preferred width (the widest
-        // cell) and stays there even when the viewport shrinks, so notes never wrap.
-        override fun getScrollableTracksViewportWidth(): Boolean = true
-    }.apply {
+    // Top-level class (not an anonymous inner) so the JBList doesn't carry a
+    // `this$0 -> CodeTourPanel` reference that survives via macOS CAccessible.
+    private val itemList: JBList<TourItemEntry> = TourItemList(itemListModel).apply {
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         fixedCellHeight = -1
     }
@@ -73,6 +60,31 @@ class CodeTourPanel(private val project: Project) : JPanel(BorderLayout()), Disp
         override fun onTourAdded(tour: TourState) { switchTour(tour) }
         override fun onTourRemoved(tourId: String) {
             if (currentTour?.id == tourId) switchTour(toursService.all().lastOrNull())
+        }
+    }
+
+    // Saved so we can removeMouseListener / removeComponentListener on dispose; the
+    // JBList stays alive past unload via macOS CAccessible, and the listeners' anonymous
+    // classes would otherwise hold an implicit reference back to CodeTourPanel.
+    private val itemResizeListener = object : ComponentAdapter() {
+        override fun componentResized(e: ComponentEvent) {
+            itemList.fixedCellHeight = 0   // toggle to fire propertyChange
+            itemList.fixedCellHeight = -1
+        }
+    }
+    private val itemMouseListener = object : MouseInputAdapter() {
+        override fun mouseClicked(e: MouseEvent) {
+            val idx = itemList.locationToIndex(e.point)
+            if (idx < 0) return
+            val bounds = itemList.getCellBounds(idx, idx) ?: return
+            if (!bounds.contains(e.point)) {
+                itemList.clearSelection()
+                return
+            }
+            val tour = currentTour ?: return
+            if (idx !in tour.items.indices) return
+            tour.gotoIndex(idx)
+            openCurrentItem(project, tour)
         }
     }
 
@@ -99,31 +111,8 @@ class CodeTourPanel(private val project: Project) : JPanel(BorderLayout()), Disp
         add(header, BorderLayout.NORTH)
 
         itemList.cellRenderer = ItemRenderer { currentTour }
-        // When the list is resized (tool window resize), force JList to recompute
-        // per-cell heights so HTML reflows at the new width.
-        itemList.addComponentListener(object : ComponentAdapter() {
-            override fun componentResized(e: ComponentEvent) {
-                itemList.fixedCellHeight = 0   // toggle to fire propertyChange
-                itemList.fixedCellHeight = -1
-            }
-        })
-        itemList.addMouseListener(object : MouseInputAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                val idx = itemList.locationToIndex(e.point)
-                if (idx < 0) return
-                val bounds = itemList.getCellBounds(idx, idx) ?: return
-                // locationToIndex clamps to a valid index when clicking past the last row;
-                // reject clicks outside the actual cell rectangle.
-                if (!bounds.contains(e.point)) {
-                    itemList.clearSelection()
-                    return
-                }
-                val tour = currentTour ?: return
-                if (idx !in tour.items.indices) return
-                tour.gotoIndex(idx)
-                openCurrentItem(project, tour)
-            }
-        })
+        itemList.addComponentListener(itemResizeListener)
+        itemList.addMouseListener(itemMouseListener)
         add(JBScrollPane(itemList), BorderLayout.CENTER)
 
         toursService.addListener(serviceListener)
@@ -191,6 +180,14 @@ class CodeTourPanel(private val project: Project) : JPanel(BorderLayout()), Disp
     override fun dispose() {
         toursService.removeListener(serviceListener)
         currentTour?.removeListener(tourListener)
+        // Explicitly drop listeners and cell renderer from the JBList. The JBList itself
+        // survives plugin unload via macOS CAccessible; if any of these still pointed back
+        // to CodeTourPanel, the entire plugin classloader would stay pinned.
+        itemList.removeMouseListener(itemMouseListener)
+        itemList.removeComponentListener(itemResizeListener)
+        itemList.cellRenderer = null
+        // Detach our Swing tree (cascades removeNotify down children).
+        removeAll()
     }
 
     private inner class PrevAction : AnAction(
@@ -225,6 +222,19 @@ class CodeTourPanel(private val project: Project) : JPanel(BorderLayout()), Disp
     }
 }
 
+/** Top-level subclass (not an anonymous inner class of CodeTourPanel) so that the JBList,
+ *  which can survive plugin unload via macOS CAccessible, doesn't carry an implicit
+ *  reference to CodeTourPanel and pin the plugin classloader. */
+private class TourItemList(model: javax.swing.ListModel<TourItemEntry>) : JBList<TourItemEntry>(model) {
+    override fun locationToIndex(location: java.awt.Point): Int {
+        val idx = super.locationToIndex(location)
+        if (idx < 0) return -1
+        val bounds = getCellBounds(idx, idx) ?: return -1
+        return if (bounds.contains(location)) idx else -1
+    }
+    override fun getScrollableTracksViewportWidth(): Boolean = true
+}
+
 private class ItemRenderer(private val tourProvider: () -> TourState?) : ListCellRenderer<TourItemEntry> {
     private val label = JBLabel().apply {
         border = BorderFactory.createEmptyBorder(4, 8, 6, 8)
@@ -247,6 +257,10 @@ private class ItemRenderer(private val tourProvider: () -> TourState?) : ListCel
             else -> "○"
         }
         val title = StringUtil.escapeXmlEntities(value.spec.title)
+        val locationLabel = value.spec.location ?: defaultLocationOf(value.spec)
+        // Bold + smaller + slightly darker gray. Distinct from the bold full-size title
+        // above and the lighter normal-weight notes below.
+        val locationHtml = "<div style='color:#666; font-size:90%; margin-top:2px'><b>${StringUtil.escapeXmlEntities(locationLabel)}</b></div>"
         // Each note is rendered as its own <div> with a top margin, so multiple notes look
         // like discrete paragraphs rather than a blob of run-together lines.
         val notesHtml = value.spec.inlays.joinToString("") { inlay ->
@@ -258,7 +272,7 @@ private class ItemRenderer(private val tourProvider: () -> TourState?) : ListCel
         // wrap the content in a fixed-width table cell to force wrapping.
         val availableWidth = (list.width - 16).coerceAtLeast(120)
         label.text = "<html><table width=\"$availableWidth\" cellspacing=\"0\" cellpadding=\"0\">" +
-            "<tr><td><b>$prefix&nbsp;&nbsp;$title</b>$notesHtml</td></tr></table></html>"
+            "<tr><td><b>$prefix&nbsp;&nbsp;$title</b>$locationHtml$notesHtml</td></tr></table></html>"
 
         if (isSelected) {
             label.background = list.selectionBackground
@@ -269,4 +283,11 @@ private class ItemRenderer(private val tourProvider: () -> TourState?) : ListCel
         }
         return label
     }
+}
+
+/** Fallback "location" label when an item didn't supply one: file basename + first inlay's line. */
+private fun defaultLocationOf(spec: com.gradle.idetour.tours.model.TourItem): String {
+    val basename = spec.file.substringAfterLast('/').substringAfterLast('\\')
+    val line = spec.inlays.firstOrNull()?.line
+    return if (line != null) "$basename:$line" else basename
 }

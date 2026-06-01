@@ -65,6 +65,7 @@ class AddItemsTool : Tool {
             add("id", Schema.stringProp("Optional stable id. Server assigns one if absent."))
             add("title", Schema.stringProp("Short title shown in the tool window."))
             add("file", Schema.stringProp("Project-relative or absolute path."))
+            add("location", Schema.stringProp("Optional user-friendly location label shown as a subtitle, e.g. 'TourState.gotoIndex' or 'build.gradle.kts'. Defaults to file basename + first inlay's line."))
             add("anchor", JsonObject().apply {
                 addProperty("type", "object")
                 addProperty("description", "Scroll target on activation. Defaults to first inlay's line.")

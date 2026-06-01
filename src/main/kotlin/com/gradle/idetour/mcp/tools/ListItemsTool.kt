@@ -25,6 +25,7 @@ class ListItemsTool : Tool {
                 addProperty("id", entry.id)
                 addProperty("title", entry.spec.title)
                 addProperty("file", entry.spec.file)
+                if (entry.spec.location != null) addProperty("location", entry.spec.location)
                 addProperty("inlayCount", entry.spec.inlays.size)
                 addProperty("highlightCount", entry.spec.highlights.size)
             })
