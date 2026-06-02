@@ -258,9 +258,10 @@ private class ItemRenderer(private val tourProvider: () -> TourState?) : ListCel
         }
         val title = StringUtil.escapeXmlEntities(value.spec.title)
         val locationLabel = value.spec.location ?: defaultLocationOf(value.spec)
-        // Bold + smaller + slightly darker gray. Distinct from the bold full-size title
-        // above and the lighter normal-weight notes below.
-        val locationHtml = "<div style='color:#666; font-size:90%; margin-top:2px'><b>${StringUtil.escapeXmlEntities(locationLabel)}</b></div>"
+        // Render in a monospace font (JetBrains Mono if present, else generic monospace)
+        // so it reads as a code / path identifier — visually distinct from the title and
+        // notes without needing a separate color.
+        val locationHtml = "<div style='margin-top:2px; font-size:90%; font-family:JetBrains Mono, monospace'>${StringUtil.escapeXmlEntities(locationLabel)}</div>"
         // Each note is rendered as its own <div> with a top margin, so multiple notes look
         // like discrete paragraphs rather than a blob of run-together lines.
         val notesHtml = value.spec.inlays.joinToString("") { inlay ->

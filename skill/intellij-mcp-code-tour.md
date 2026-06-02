@@ -45,7 +45,7 @@ The `intellij-tour` MCP server exposes these tools:
 - `inlays` is **required** and must contain at least one entry. `position` is `aboveLine` (default), `belowLine`, or `endOfLine`.
 - `highlights` is optional; useful for marking the region the explanation refers to.
 - `anchor` defaults to the first inlay's line.
-- `location` is optional but **strongly recommended**: a short, user-friendly label like `ClassName.methodName`, `ClassName`, or `filename.kt` shown as a subtitle in the tool-window list. Helps the user identify *where* in the code the item lives without reading the full path. If omitted, the renderer falls back to `<basename>:<line>` (e.g. `TourState.kt:48`).
+- `location` is optional but **strongly recommended**. The renderer shows it as a subtitle below the title in a **monospace font** (JetBrains Mono if installed), so it should be **code-like with as little natural language as possible** — an identifier path, signature, or filename, not a description. Good: `TourState.gotoIndex`, `McpHttpHandler#handle`, `ClassName$InnerClass`, `build.gradle.kts`, `package.subpackage.ClassName`. Bad: `the main entry point`, `Settings — General`, `where the tour boots`. If omitted, the renderer falls back to `<basename>:<line>` (e.g. `TourState.kt:48`).
 - Inlay text is rendered with a state prefix (`✓` passed / `▶` current / `○` future) automatically — don't include one in `text`.
 
 ## Workflow
