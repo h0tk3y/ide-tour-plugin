@@ -9,7 +9,9 @@ import com.intellij.ui.content.ContentFactory
 class CodeTourToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val panel = CodeTourPanel(project)
-        val content = ContentFactory.getInstance().createContent(panel, "", false)
+        // panel.component is a plain JPanel; CodeTourPanel itself is just a Disposable
+        // wrapper so the JComponent in the AWT hierarchy isn't a plugin class.
+        val content = ContentFactory.getInstance().createContent(panel.component, "", false)
         toolWindow.contentManager.addContent(content)
         Disposer.register(toolWindow.disposable, panel)
     }
