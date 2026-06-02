@@ -1,4 +1,4 @@
-# Claude IDE Tour
+# Code Tour
 
 IntelliJ plugin that hosts a small MCP server inside the IDE so [Claude Code](https://docs.anthropic.com/claude/code) can drive guided code tours: pre-populate an ordered list of items — each a file + inlay-hint explanations + optional region highlights — and the user navigates from a tool window in the IDE.
 
@@ -35,8 +35,8 @@ When you open a project in IntelliJ, the plugin starts an HTTP MCP server on `12
 
 | Tool | Purpose |
 |---|---|
-| `start_tour` / `end_tour` | Allocate / dispose a tour |
-| `add_items` / `set_items` | Populate / replace the item list |
+| `start_tour` / `end_tour` | Allocate (optionally populating items in one call) / dispose a tour |
+| `add_items` / `set_items` | Append more items / replace the item list |
 | `update_item` / `remove_item` / `list_items` | Surgical edits and inspection |
 | `goto_item` / `next_item` / `prev_item` / `get_current_item` | Navigation (and polling) |
 | `navigate` | Stateless `file:line` jump, no tour required |

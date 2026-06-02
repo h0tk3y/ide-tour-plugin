@@ -1,6 +1,6 @@
 <idea-plugin>
     <id>com.gradle.idetour</id>
-    <name>Claude IDE Tour</name>
+    <name>Code Tour</name>
     <vendor>Gradle Team</vendor>
     <description><![CDATA[
         Hosts an MCP server inside the IDE so Claude Code can drive guided code tours:
