@@ -2,6 +2,8 @@ package com.gradle.idetour.mcp
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.extensions.PluginId
 
 class McpProtocol(private val tools: ToolRegistry) {
     fun handle(method: String, params: JsonObject): JsonObject = when (method) {
@@ -42,6 +44,9 @@ class McpProtocol(private val tools: ToolRegistry) {
     companion object {
         const val PROTOCOL_VERSION = "2025-03-26"
         const val SERVER_NAME = "intellij-tour"
-        const val SERVER_VERSION = "0.1.0"
+
+        /** Reported in the MCP `initialize` handshake; sourced from the plugin descriptor so it tracks the build version. */
+        val SERVER_VERSION: String =
+            PluginManagerCore.getPlugin(PluginId.getId("com.gradle.idetour"))?.version ?: "unknown"
     }
 }
