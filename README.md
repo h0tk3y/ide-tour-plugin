@@ -18,16 +18,16 @@ Built against IntelliJ Platform 2025.1; no upper-bound declared, so it loads in 
 Two one-liners, once per machine. From any directory:
 
 ```sh
-# 1. Register the MCP server in your user-level Claude Code config.
-claude mcp add --transport http intellij-tour http://127.0.0.1:64343/mcp
+# 1. Register the MCP server in your user-level Claude Code config (-s user).
+claude mcp add -s user --transport http intellij-tour http://127.0.0.1:64343/mcp
 
 # 2. Install the companion skill so Claude knows how to use the tools.
-mkdir -p ~/.claude/skills && \
+mkdir -p ~/.claude/skills/intellij-mcp-code-tour && \
   curl -sSL https://github.com/h0tk3y/ide-tour-plugin/releases/latest/download/intellij-mcp-code-tour.md \
-  -o ~/.claude/skills/intellij-mcp-code-tour.md
+  -o ~/.claude/skills/intellij-mcp-code-tour/SKILL.md
 ```
 
-Both steps target user-level config, so the tour skill becomes available in every project you open with Claude Code. For project-scoped wiring instead, add `-s project` to the first command (writes a `.mcp.json` next to where you run it) and copy the skill into `<repo>/.claude/skills/` instead of `~/.claude/skills/`.
+Both steps target user-level config, so the tour skill becomes available in every project you open with Claude Code. (`claude mcp add` defaults to `local`/project scope, so `-s user` is what makes the server global.) For project-scoped wiring instead, swap `-s user` for `-s project` on the first command (writes a `.mcp.json` next to where you run it) and put the skill at `<repo>/.claude/skills/intellij-mcp-code-tour/SKILL.md` instead.
 
 Restart Claude Code if `mcp__intellij-tour__*` doesn't show up in the tool list, or if `/intellij-mcp-code-tour` isn't recognized as a skill.
 

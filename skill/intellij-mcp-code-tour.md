@@ -81,9 +81,9 @@ The `intellij-tour` MCP server exposes these tools:
 3. **Open this project** in IntelliJ — the same project Claude is working with. The MCP server starts automatically on first project open and listens on `127.0.0.1:64343/mcp`.
 4. **Register the MCP server with Claude Code.** One-liner — no JSON editing required:
    ```sh
-   claude mcp add --transport http intellij-tour http://127.0.0.1:64343/mcp
+   claude mcp add -s user --transport http intellij-tour http://127.0.0.1:64343/mcp
    ```
-   This writes the server entry to your user-level Claude Code config; it'll be available in every project. Add `-s project` to scope it to the current repo instead (writes a `.mcp.json` next to where you ran it).
+   `-s user` writes the server entry to your user-level Claude Code config, so it's available in every project. (Without it, `claude mcp add` defaults to `local`/project scope.) Swap in `-s project` to scope it to the current repo instead (writes a `.mcp.json` next to where you ran it).
 
    Restart Claude Code if `mcp__intellij-tour__*` doesn't show up in the tool list.
 
