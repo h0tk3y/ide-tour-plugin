@@ -2,6 +2,8 @@
 
 IntelliJ plugin that hosts a small MCP server inside the IDE so [Claude Code](https://docs.anthropic.com/claude/code) can drive guided code tours: pre-populate an ordered list of items — each a file + inlay-hint explanations + optional region highlights — and the user navigates from a tool window in the IDE.
 
+![Code Tour in action: inlay-hint explanations in the editor alongside the Code Tour tool window](docs/screenshot.png)
+
 ## Install the plugin
 
 Two ways:
