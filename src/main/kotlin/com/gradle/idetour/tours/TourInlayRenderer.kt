@@ -17,8 +17,11 @@ class TourInlayRenderer(
     override fun calcWidthInPixels(inlay: Inlay<*>): Int {
         val font = inlay.editor.colorsScheme.getFont(EditorFontType.PLAIN)
         val metrics = inlay.editor.contentComponent.getFontMetrics(font)
-        return metrics.stringWidth(displayText()) + 8
+        return (displayLines().maxOfOrNull { metrics.stringWidth(it) } ?: 0) + 8
     }
+
+    override fun calcHeightInPixels(inlay: Inlay<*>): Int =
+        displayLines().size * inlay.editor.lineHeight
 
     override fun paint(inlay: Inlay<*>, g: Graphics, targetRegion: Rectangle, textAttributes: TextAttributes) {
         val editor = inlay.editor
@@ -26,17 +29,30 @@ class TourInlayRenderer(
         g.font = font
         g.color = JBColor.GRAY
         val metrics = editor.contentComponent.getFontMetrics(font)
-        g.drawString(displayText(), targetRegion.x + 4, targetRegion.y + metrics.ascent)
+        val lineHeight = editor.lineHeight
+        displayLines().forEachIndexed { i, line ->
+            g.drawString(line, targetRegion.x + 4, targetRegion.y + i * lineHeight + metrics.ascent)
+        }
     }
 
-    private fun displayText(): String {
+    /**
+     * The text split into rendered lines. The state prefix (`✓`/`▶`/`○`) is attached to
+     * the first line only; continuation lines are indented to align under it.
+     */
+    private fun displayLines(): List<String> {
+        val prefix = statePrefix()
+        return text.split('\n').mapIndexed { i, line ->
+            if (i == 0) "$prefix $line" else "  $line"
+        }
+    }
+
+    private fun statePrefix(): String {
         val itemIndex = tour.items.indexOfFirst { it.id == itemId }
-        val prefix = when {
+        return when {
             itemIndex < 0 -> "?"
             itemIndex < tour.currentIndex -> "✓"
             itemIndex == tour.currentIndex -> "▶"
             else -> "○"
         }
-        return "$prefix $text"
     }
 }

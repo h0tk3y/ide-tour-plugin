@@ -49,6 +49,8 @@ The `intellij-tour` MCP server exposes these tools:
 - `anchor` defaults to the first inlay's line.
 - `location` is optional but **strongly recommended**. The renderer shows it as a subtitle below the title in a **monospace font**, so it should be **code-like with as little natural language as possible** — an identifier path, signature, or filename, not a description. Good: `TourState.gotoIndex`, `McpHttpHandler#handle`, `ClassName$InnerClass`, `build.gradle.kts`, `package.subpackage.ClassName`. Bad: `the main entry point`, `Settings — General`, `where the tour boots`. If omitted, the renderer falls back to `<basename>:<line>` (e.g. `TourState.kt:48`).
 - Inlay text is rendered with a state prefix (`✓` passed / `▶` current / `○` future) automatically — don't include one in `text`.
+- Keep each explanation note's lines **short** — inlays don't wrap, so a long line runs off to the right and pushes the code aside. Aim for roughly 60–80 characters per line.
+- For a multiline explanation, insert explicit line breaks (`\n`) yourself so the note reads as a few short stacked lines rather than one long line. Example: `"Boots the MCP server on first project open.\nRuns once per IDE session — guarded by a flag."`
 
 ## Workflow
 
